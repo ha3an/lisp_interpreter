@@ -1,0 +1,20 @@
+# input_list= ['h', '#', '\n', '$', '\n', 'h', 'e', 'l', 'l', 'o', '(', '$', '\n'];
+# input_list =['(', ' ', 'm', ' ', '.', ' ', '7', '2', ')', '\n', '$', '\n']
+print(input_list)
+my_exp_list = slicer(remove_blank(input_list))
+
+print("--------------------------------------")
+print(my_exp_list)
+
+print("--------------------------------------")
+legal_list = scan_illegal_character(my_exp_list)
+print(legal_list)
+print("--------------------------------------")
+tokenoized_list = tokenizer(legal_list)
+print(tokenoized_list)
+
+(s23.49)
+$
+(21.xyz)
+$
+$$
