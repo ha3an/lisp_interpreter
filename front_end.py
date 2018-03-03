@@ -33,14 +33,108 @@ class SExp:
         else:
             self.left = l_exp
             self.right = r_exp
-            # if l_exp.exp_type != ExpType.non_atom:
-            #     self.left = SExp(l_exp.exp_type, l_exp.exp_value)
-            # else:
-            #     self.left = SExp(l_exp.exp_type, l_exp.left, l_exp.right)
-            # if r_exp.exp_type != ExpType.non_atom:
-            #     self.right = SExp(r_exp.exp_type, r_exp.exp_value)
-            # else:
-            #     self.right = SExp(r_exp.exp_type, r_exp.left, r_exp.right)
+
+    def is_atom(self):
+        if self.left is None and self.right is None:
+            return SExp.get_t()
+        else:
+            return SExp.get_nil()
+
+    def car(self):
+        if self.left is None:
+            raise Exception("CAR is defined for non-atomic expressions")
+        else:
+            return self.left
+
+    def cdr(self):
+        if self.right is None:
+            raise Exception("CAR is defined for non-atomic expressions")
+        else:
+            return self.right
+
+    def is_null(self):
+        nil = SExp.get_nil()
+        if self.exp_type == nil.exp_type and self.exp_value == nil.exp_value:
+            return SExp.get_t()
+        else:
+            return SExp.get_nil()
+
+    def is_int(self):
+        if self.exp_type == ExpType.int_atom:
+            return SExp.get_t()
+        else:
+            return SExp.get_nil()
+
+    @staticmethod
+    def equal(s1, s2):
+        if s1.left is None and s1.right is None and s2.left is None and s2.right is None:
+            if s1.exp_type == ExpType.int_atom and s2.exp_type == ExpType.int_atom:
+                if s1.exp_value == s2.exp_value:
+                    return SExp.get_t()
+                else:
+                    return SExp.get_nil()
+            if s1.exp_type == ExpType.symb_atom and s2.exp_type == ExpType.symb_atom:
+                if s1.exp_value == s2.exp_value:
+                    return SExp.get_t()
+                else:
+                    return SExp.get_nil()
+            else:
+                return SExp.get_nil()
+
+        else:
+            raise Exception('Both arguments for EQ should be atomic')
+
+    @staticmethod
+    def cons(s1, s2):
+        return SExp(ExpType.non_atom, s1, s2)
+
+    @staticmethod
+    def get_nil():
+        return find(decl_symb, 'NIL')
+
+    @staticmethod
+    def get_t():
+        return find(decl_symb, 'T')
+
+    @staticmethod
+    def plus(s1, s2):
+        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
+            raise Exception("Both PLUS arguments should be integer atomic")
+        else:
+            result_value = int(s1.exp_value) + int(s2.exp_value)
+            return SExp(ExpType.int_atom, str(result_value))
+
+    @staticmethod
+    def minus(s1, s2):
+        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
+            raise Exception("Both MINUS arguments should be integer atomic")
+        else:
+            result_value = int(s1.exp_value) - int(s2.exp_value)
+            return SExp(ExpType.int_atom, str(result_value))
+
+    @staticmethod
+    def times(s1, s2):
+        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
+            raise Exception("Both TIMES arguments should be integer atomic")
+        else:
+            result_value = int(s1.exp_value) * int(s2.exp_value)
+            return SExp(ExpType.int_atom, str(result_value))
+
+    @staticmethod
+    def quotient(s1, s2):
+        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
+            raise Exception("Both QUOTIENT arguments should be integer atomic")
+        else:
+            result_value = int(int(s1.exp_value) / int(s2.exp_value))
+            return SExp(ExpType.int_atom, str(result_value))
+
+    @staticmethod
+    def remainder(s1, s2):
+        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
+            raise Exception("Both REMAINDER arguments should be integer atomic")
+        else:
+            result_value = int(int(s1.exp_value) % int(s2.exp_value))
+            return SExp(ExpType.int_atom, str(result_value))
 
 
 def read():
@@ -189,22 +283,21 @@ def find(id_list, identifier):
     return None
 
 
-def get_nil():
-    return find(decl_symb, 'NIL')
+
 
 def list_parser(exp):
     nxt_token = CkNextToken(exp)
     if nxt_token == TokenType.right_parenth:
-        return get_nil()
+        return SExp.get_nil()
     if nxt_token == TokenType.space:
         if check_next_next_token(exp) != TokenType.right_parenth:
             skip_token(exp)
             s1 = parser(exp)
             s2 = list_parser(exp)
-            return SExp(ExpType.non_atom, s1, s2)
+            return SExp.cons(s1, s2)
         else:
             skip_token(exp) # skipping space in these (1 ) expressions
-            return get_nil()
+            return SExp.get_nil()
 
     else:
         raise Exception('expects dot or space between two expressions ')
@@ -224,7 +317,7 @@ def parser(exp):
             skip_token(exp)
         if CkNextToken(exp) == TokenType.right_parenth:
             skip_token(exp)
-            return get_nil()
+            return SExp.get_nil()
         s1 = parser(exp)
         nxt_token = CkNextToken(exp)
 
@@ -252,7 +345,7 @@ def parser(exp):
         if nxt_token != TokenType.right_parenth:
             raise Exception('missing parentheses at end of expression ')
         skip_token(exp)
-        return SExp(ExpType.non_atom, s1, s2)
+        return SExp.cons(s1, s2)
 
     if nxt_token == TokenType.integer:
         s1 = SExp(ExpType.int_atom, get_first_token(exp))
