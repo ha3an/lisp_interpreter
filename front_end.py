@@ -3,9 +3,10 @@ import re
 from enum import Enum
 import jsonpickle # pip install jsonpickle
 import json
-
+# TODO GREATER AND LESS IMPLEMENTATION
 decl_symb = []
-
+a_list=[]
+d_list=[]
 
 
 class TokenType(Enum):
@@ -36,9 +37,9 @@ class SExp:
 
     def is_atom(self):
         if self.left is None and self.right is None:
-            return SExp.get_t()
+            return SExp.get_atom('T')
         else:
-            return SExp.get_nil()
+            return SExp.get_atom('NIL')
 
     def car(self):
         if self.left is None:
@@ -53,33 +54,33 @@ class SExp:
             return self.right
 
     def is_null(self):
-        nil = SExp.get_nil()
+        nil = SExp.get_atom('NIL')
         if self.exp_type == nil.exp_type and self.exp_value == nil.exp_value:
-            return SExp.get_t()
+            return SExp.get_atom('T')
         else:
-            return SExp.get_nil()
+            return SExp.get_atom('NIL')
 
     def is_int(self):
         if self.exp_type == ExpType.int_atom:
-            return SExp.get_t()
+            return SExp.get_atom('T')
         else:
-            return SExp.get_nil()
+            return SExp.get_atom('NIL')
 
     @staticmethod
     def equal(s1, s2):
         if s1.left is None and s1.right is None and s2.left is None and s2.right is None:
             if s1.exp_type == ExpType.int_atom and s2.exp_type == ExpType.int_atom:
                 if s1.exp_value == s2.exp_value:
-                    return SExp.get_t()
+                    return SExp.get_atom('T')
                 else:
-                    return SExp.get_nil()
+                    return SExp.get_atom('NIL')
             if s1.exp_type == ExpType.symb_atom and s2.exp_type == ExpType.symb_atom:
                 if s1.exp_value == s2.exp_value:
-                    return SExp.get_t()
+                    return SExp.get_atom('T')
                 else:
-                    return SExp.get_nil()
+                    return SExp.get_atom('NIL')
             else:
-                return SExp.get_nil()
+                return SExp.get_atom('NIL')
 
         else:
             raise Exception('Both arguments for EQ should be atomic')
@@ -89,12 +90,8 @@ class SExp:
         return SExp(ExpType.non_atom, s1, s2)
 
     @staticmethod
-    def get_nil():
-        return find(decl_symb, 'NIL')
-
-    @staticmethod
-    def get_t():
-        return find(decl_symb, 'T')
+    def get_atom(symbol):
+        return find(decl_symb, symbol)
 
     @staticmethod
     def plus(s1, s2):
@@ -135,6 +132,112 @@ class SExp:
         else:
             result_value = int(int(s1.exp_value) % int(s2.exp_value))
             return SExp(ExpType.int_atom, str(result_value))
+
+    @staticmethod
+    def get_val(exp, exp_list):
+        for item in exp_list:
+            symb_atom = item.car()
+            if SExp.equal(exp, symb_atom) == SExp.get_atom('T'):
+                return item.cdr()
+        return None
+
+    @staticmethod
+    def add_pairs(para_list, arg_list, alist):
+        if para_list.is_null() == SExp.get_atom('T'):
+            return alist
+        else:
+            s1 = SExp.cons(para_list.car(), arg_list.car())
+            s2 = SExp.add_pairs(para_list.cdr(), arg_list.cdr(), alist)
+            return SExp.cons(s1, s2)
+        return
+
+def eval_exp(exp, alist,dlist):
+    t = SExp.get_atom('T')
+    nil = SExp.get_atom('NIL')
+    if exp.is_atom() == t:
+        if exp.is_int() == t:
+            return exp
+        if SExp.equal(exp, t) == t:
+            return t
+        if SExp.equal(exp, nil) == t:
+            return nil
+        value = SExp.get_val(exp, alist)
+        if value is not None:
+            return value
+        else:
+            raise Exception("Unbound ATOM!")
+    car_exp = exp.car()
+    if car_exp.is_atom() == t:
+        if car_exp == SExp.get_atom('QUOTE'):
+            cadr_exp = exp.cdr().car()
+            return cadr_exp
+        if car_exp == SExp.get_atom('COND'):
+            return evcon(exp.cdr(), alist, dlist)
+        if car_exp == SExp.get_atom('DEFUN'):
+            # (DEFUN  F  (p1 ... pn)  fb) : add (F . ((p1 ... pn) . fb)) to d-list.
+            #  DEFUN.(F.((P1.(PN.NIL)).(FB.NIL))))
+            # (DEFUN.(F.((P1.(P2.(P3.(PN.NIL)))).(FB.NIL))))
+            # eg (DEFUN F (P1 P2 P3 PN) FB)
+            function_name = exp.cdr().car()
+            function_body = exp.cdr().cdr().cdr().car()
+            parameters = exp.cdr().cdr().car()
+            exp_name = function_name
+            exp_value = SExp(ExpType.non_atom, parameters, function_body)
+            dlist.append(SExp(ExpType.non_atom, exp_name, exp_value))
+        else:
+            apply(car_exp, evlis(exp.cdr(), alist, dlist) , alist, dlist)
+    else:
+        raise Exception("ERROR: invalid lisp expression: atom is expected ")
+
+
+def apply(function_name, arg_list, alist, dlist):
+    if function_name.is_atom() == SExp.get_atom('T'):
+        if function_name == SExp.get_atom('CAR'):
+            return arg_list.car().car()
+        if function_name == SExp.get_atom('CDR'):
+            return arg_list.car().cdr()
+        if function_name == SExp.get_atom('CONS'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.cons(car_arg_list, cadr_arg_list)
+        if function_name == SExp.get_atom('ATOM'):
+            return arg_list.car().is_atom()
+        if function_name == SExp.get_atom('NULL'):
+            return arg_list.car().is_null()
+        if function_name == SExp.get_atom('EQ'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.equal(car_arg_list,cadr_arg_list)
+        else:
+            user_def_fun = SExp.get_val(function_name, dlist)
+            fun_body = user_def_fun.cdr()
+            fun_parameters = user_def_fun.car()
+            # TODO ADD PAIRS
+            new_alist = SExp.add_pairs(fun_parameters, arg_list, alist)
+            return eval_exp(fun_body, new_alist, dlist)
+
+    else:
+        raise Exception('Error in Applying Function: function_name is not atomic')
+
+
+def evlis(par_list, alist, dlist):
+    if par_list.is_int() == SExp.get_atom('T'):
+        return SExp.get_atom('NIL')
+    else:
+        s1 =eval_exp(par_list.car(), alist, dlist)
+        s2 =evlis(par_list.cdr(), alist, dlist)
+        return SExp.cons(s1,  s2)
+
+
+def evcon(be, alist, dlist): # be is of form ((b1 e1) ... (bn en))
+    if be.is_null() == SExp.get_atom('T'):
+        raise Exception("Invalid boolean in if clause")
+    caar_be = be.car().car()
+    if eval_exp(caar_be, alist, dlist) == SExp.get_atom('T'):
+        cadar_be =be.car().cdr().car()
+        return eval_exp(cadar_be, alist, dlist)
+    else:
+        return evcon(be.cdr(), alist, dlist)
 
 
 def read():
@@ -288,7 +391,7 @@ def find(id_list, identifier):
 def list_parser(exp):
     nxt_token = CkNextToken(exp)
     if nxt_token == TokenType.right_parenth:
-        return SExp.get_nil()
+        return SExp.get_atom('NIL')
     if nxt_token == TokenType.space:
         if check_next_next_token(exp) != TokenType.right_parenth:
             skip_token(exp)
@@ -297,7 +400,7 @@ def list_parser(exp):
             return SExp.cons(s1, s2)
         else:
             skip_token(exp) # skipping space in these (1 ) expressions
-            return SExp.get_nil()
+            return SExp.get_atom('NIL')
 
     else:
         raise Exception('expects dot or space between two expressions ')
@@ -317,7 +420,7 @@ def parser(exp):
             skip_token(exp)
         if CkNextToken(exp) == TokenType.right_parenth:
             skip_token(exp)
-            return SExp.get_nil()
+            return SExp.get_atom('NIL')
         s1 = parser(exp)
         nxt_token = CkNextToken(exp)
 
@@ -384,7 +487,10 @@ def parse_list(exp_list):
             if len(exp) != 0:
                 raise Exception('invalid characters at end of expressions ')
             output(sexp)
-            print()
+            print("======EVALUATION======")
+            evaluated_exp = eval_exp(sexp,a_list,d_list)
+            output(evaluated_exp)
+
             #serialized = jsonpickle.encode(obj)
             #print(json.dumps(json.loads(serialized), indent=4))
         except Exception as error_msg:
@@ -398,6 +504,9 @@ print("Note: code should be terminated with $$")
 
 decl_symb.append(SExp(ExpType.symb_atom, 'NIL'))
 decl_symb.append(SExp(ExpType.symb_atom, 'T'))
+decl_symb.append(SExp(ExpType.symb_atom, 'DEFUN'))
+decl_symb.append(SExp(ExpType.symb_atom, 'QUOTE'))
+decl_symb.append(SExp(ExpType.symb_atom, 'COND'))
 
 input_list = []
 input_list = read()
