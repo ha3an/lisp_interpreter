@@ -4,6 +4,7 @@ from enum import Enum
 import jsonpickle # pip install jsonpickle
 import json
 # TODO GREATER AND LESS IMPLEMENTATION
+
 decl_symb = []
 a_list=[]
 d_list=[]
@@ -28,7 +29,8 @@ class ExpType(Enum):
 class SExp:
     def __init__(self, exp_type, l_exp, r_exp=None):
         self.exp_type = exp_type
-
+        self.left = None
+        self.right = None
         if r_exp is None:
             self.exp_value = l_exp
         else:
@@ -95,40 +97,40 @@ class SExp:
 
     @staticmethod
     def plus(s1, s2):
-        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
-            raise Exception("Both PLUS arguments should be integer atomic")
+        if s1.exp_type != ExpType.int_atom or s2.exp_type != ExpType.int_atom:
+            raise Exception("Both PLUS arguments should be integer atoms")
         else:
             result_value = int(s1.exp_value) + int(s2.exp_value)
             return SExp(ExpType.int_atom, str(result_value))
 
     @staticmethod
     def minus(s1, s2):
-        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
-            raise Exception("Both MINUS arguments should be integer atomic")
+        if s1.exp_type != ExpType.int_atom or s2.exp_type != ExpType.int_atom:
+            raise Exception("Both MINUS arguments should be integer atoms")
         else:
             result_value = int(s1.exp_value) - int(s2.exp_value)
             return SExp(ExpType.int_atom, str(result_value))
 
     @staticmethod
     def times(s1, s2):
-        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
-            raise Exception("Both TIMES arguments should be integer atomic")
+        if s1.exp_type != ExpType.int_atom or s2.exp_type != ExpType.int_atom:
+            raise Exception("Both TIMES arguments should be integer atoms")
         else:
             result_value = int(s1.exp_value) * int(s2.exp_value)
             return SExp(ExpType.int_atom, str(result_value))
 
     @staticmethod
     def quotient(s1, s2):
-        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
-            raise Exception("Both QUOTIENT arguments should be integer atomic")
+        if s1.exp_type != ExpType.int_atom or s2.exp_type != ExpType.int_atom:
+            raise Exception("Both QUOTIENT arguments should be integer atoms")
         else:
             result_value = int(int(s1.exp_value) / int(s2.exp_value))
             return SExp(ExpType.int_atom, str(result_value))
 
     @staticmethod
     def remainder(s1, s2):
-        if s1.exp_type != ExpType.int_atom or s2.exp_type == ExpType.int_atom:
-            raise Exception("Both REMAINDER arguments should be integer atomic")
+        if s1.exp_type != ExpType.int_atom or s2.exp_type != ExpType.int_atom:
+            raise Exception("Both REMAINDER arguments should be integer atoms")
         else:
             result_value = int(int(s1.exp_value) % int(s2.exp_value))
             return SExp(ExpType.int_atom, str(result_value))
@@ -184,8 +186,9 @@ def eval_exp(exp, alist,dlist):
             exp_name = function_name
             exp_value = SExp(ExpType.non_atom, parameters, function_body)
             dlist.append(SExp(ExpType.non_atom, exp_name, exp_value))
+            return SExp.get_atom('FUNCTION ADDED!')
         else:
-            apply(car_exp, evlis(exp.cdr(), alist, dlist) , alist, dlist)
+            return apply(car_exp, evlis(exp.cdr(), alist, dlist) , alist, dlist)
     else:
         raise Exception("ERROR: invalid lisp expression: atom is expected ")
 
@@ -208,6 +211,27 @@ def apply(function_name, arg_list, alist, dlist):
             car_arg_list = arg_list.car()
             cadr_arg_list = arg_list.cdr().car()
             return SExp.equal(car_arg_list,cadr_arg_list)
+        if function_name == SExp.get_atom('PLUS'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.plus(car_arg_list, cadr_arg_list)
+        if function_name == SExp.get_atom('MINUS'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.minus(car_arg_list, cadr_arg_list)
+        if function_name == SExp.get_atom('TIMES'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.times(car_arg_list, cadr_arg_list)
+        if function_name == SExp.get_atom('QUOTIENT'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.quotient(car_arg_list, cadr_arg_list)
+        if function_name == SExp.get_atom('REMAINDER'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.remainder(car_arg_list, cadr_arg_list)
+
         else:
             user_def_fun = SExp.get_val(function_name, dlist)
             fun_body = user_def_fun.cdr()
@@ -221,7 +245,7 @@ def apply(function_name, arg_list, alist, dlist):
 
 
 def evlis(par_list, alist, dlist):
-    if par_list.is_int() == SExp.get_atom('T'):
+    if par_list.is_null() == SExp.get_atom('T'):
         return SExp.get_atom('NIL')
     else:
         s1 =eval_exp(par_list.car(), alist, dlist)
@@ -487,10 +511,11 @@ def parse_list(exp_list):
             if len(exp) != 0:
                 raise Exception('invalid characters at end of expressions ')
             output(sexp)
-            print("======EVALUATION======")
+            print("\n")
+            print('> ', end='')
             evaluated_exp = eval_exp(sexp,a_list,d_list)
             output(evaluated_exp)
-
+            print("\n----------------------")
             #serialized = jsonpickle.encode(obj)
             #print(json.dumps(json.loads(serialized), indent=4))
         except Exception as error_msg:
@@ -507,7 +532,7 @@ decl_symb.append(SExp(ExpType.symb_atom, 'T'))
 decl_symb.append(SExp(ExpType.symb_atom, 'DEFUN'))
 decl_symb.append(SExp(ExpType.symb_atom, 'QUOTE'))
 decl_symb.append(SExp(ExpType.symb_atom, 'COND'))
-
+decl_symb.append(SExp(ExpType.symb_atom, 'FUNCTION ADDED!'))
 input_list = []
 input_list = read()
 #input_list =['(','m','2','.','3', ')', '$']
@@ -524,12 +549,15 @@ tokenized_list = pre_processing(input_list)
 #tokenized_list =[['(', ' ', ')']];
 #tokenized_list = [['(', '1',' ','.',' ','2', ')']]
 #tokenized_list =[['(', '1', ' ', ')']];
-#print(tokenized_list)
+#tokenized_list =[['(', 'EQ', ' ', '2', ' ', '2', ')'], ['(', 'EQ', ' ', '1', ' ', '2', ')']]#
+#tokenized_list = [['(', 'PLUS', ' ', '3', ' ', '4', ')']]
+#tokenized_list = [['(', 'DEFUN', ' ', 'SILLY', ' ', '(', 'A', ' ', 'B', ')', ' ', '(', 'PLUS', ' ', 'A', ' ', 'B', ')', ')'], ['(', 'SILLY', ' ', '5', ' ', '6', ')']]
+print(tokenized_list)
 print("===================================================================")
 print("Accepted Expressions For Second Pass Checking:")
 print_accepted_exp(tokenized_list)
 
 print("===================================================================")
-print("Second Pass Checking:")
+print("Second Pass Checking:\n")
 obj=parse_list(tokenized_list)
-print("===================================================================")
+print("\n===================================================================")
