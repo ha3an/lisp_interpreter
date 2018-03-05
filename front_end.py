@@ -4,10 +4,10 @@ from enum import Enum
 import jsonpickle # pip install jsonpickle
 import json
 # TODO GREATER AND LESS IMPLEMENTATION
+# TODO implementation of get_val (recursive) and alist and dlist
 
 decl_symb = []
-a_list=[]
-d_list=[]
+
 
 
 class TokenType(Enum):
@@ -137,11 +137,22 @@ class SExp:
 
     @staticmethod
     def get_val(exp, exp_list):
-        for item in exp_list:
-            symb_atom = item.car()
-            if SExp.equal(exp, symb_atom) == SExp.get_atom('T'):
-                return item.cdr()
-        return None
+        if exp_list is list:
+            return None
+        if exp_list.exp_type != ExpType.non_atom:
+            return None
+        symb_atom = exp_list.car().car()
+        if SExp.equal(exp, symb_atom) == SExp.get_atom('T'):
+            return exp_list.car().cdr()
+        else:
+            return SExp.get_val(exp, exp_list.cdr())
+
+    # def get_val(exp, exp_list):
+    #     for item in exp_list:
+    #         symb_atom = item.car()
+    #         if SExp.equal(exp, symb_atom) == SExp.get_atom('T'):
+    #             return item.cdr()
+    #     return None
 
     @staticmethod
     def add_pairs(para_list, arg_list, alist):
@@ -185,7 +196,8 @@ def eval_exp(exp, alist,dlist):
             parameters = exp.cdr().cdr().car()
             exp_name = function_name
             exp_value = SExp(ExpType.non_atom, parameters, function_body)
-            dlist.append(SExp(ExpType.non_atom, exp_name, exp_value))
+            global d_list
+            d_list = SExp.cons(SExp(ExpType.non_atom, exp_name, exp_value) , dlist)
             return SExp.get_atom('FUNCTION ADDED!')
         else:
             return apply(car_exp, evlis(exp.cdr(), alist, dlist) , alist, dlist)
@@ -533,6 +545,8 @@ decl_symb.append(SExp(ExpType.symb_atom, 'DEFUN'))
 decl_symb.append(SExp(ExpType.symb_atom, 'QUOTE'))
 decl_symb.append(SExp(ExpType.symb_atom, 'COND'))
 decl_symb.append(SExp(ExpType.symb_atom, 'FUNCTION ADDED!'))
+a_list=SExp.get_atom('NIL')
+d_list=SExp.get_atom('NIL')
 input_list = []
 input_list = read()
 #input_list =['(','m','2','.','3', ')', '$']
