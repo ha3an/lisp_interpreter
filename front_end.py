@@ -136,6 +136,27 @@ class SExp:
             return SExp(ExpType.int_atom, str(result_value))
 
     @staticmethod
+    def greater(s1, s2):
+        if s1.exp_type != ExpType.int_atom or s2.exp_type != ExpType.int_atom:
+            raise Exception("Both GREATER arguments should be integer atoms")
+        else:
+            if int(int(s1.exp_value) > int(s2.exp_value)):
+                return SExp.get_atom('T')
+            else:
+                return SExp.get_atom('NIL')
+
+
+    @staticmethod
+    def less(s1, s2):
+        if s1.exp_type != ExpType.int_atom or s2.exp_type != ExpType.int_atom:
+            raise Exception("Both LESS arguments should be integer atoms")
+        else:
+            if int(int(s1.exp_value) < int(s2.exp_value)):
+                return SExp.get_atom('T')
+            else:
+                return SExp.get_atom('NIL')
+
+    @staticmethod
     def get_val(exp, exp_list):
         if exp_list is list:
             return None
@@ -243,6 +264,14 @@ def apply(function_name, arg_list, alist, dlist):
             car_arg_list = arg_list.car()
             cadr_arg_list = arg_list.cdr().car()
             return SExp.remainder(car_arg_list, cadr_arg_list)
+        if function_name == SExp.get_atom('GREATER'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.greater(car_arg_list, cadr_arg_list)
+        if function_name == SExp.get_atom('LESS'):
+            car_arg_list = arg_list.car()
+            cadr_arg_list = arg_list.cdr().car()
+            return SExp.less(car_arg_list, cadr_arg_list)
 
         else:
             user_def_fun = SExp.get_val(function_name, dlist)
@@ -566,6 +595,8 @@ tokenized_list = pre_processing(input_list)
 #tokenized_list =[['(', 'EQ', ' ', '2', ' ', '2', ')'], ['(', 'EQ', ' ', '1', ' ', '2', ')']]#
 #tokenized_list = [['(', 'PLUS', ' ', '3', ' ', '4', ')']]
 #tokenized_list = [['(', 'DEFUN', ' ', 'SILLY', ' ', '(', 'A', ' ', 'B', ')', ' ', '(', 'PLUS', ' ', 'A', ' ', 'B', ')', ')'], ['(', 'SILLY', ' ', '5', ' ', '6', ')']]
+#tokenized_list = [['(', 'SILLY', ' ', '(', 'CAR', ' ', '(', 'QUOTE', ' ', '(', '5', ' ', '.', ' ', '6', ')', ')', ')', ' ', '(', 'CDR', ' ', '(', 'QUOTE', ' ', '(', '5', ' ', '.', ' ', '6', ')', ')', ')', ' ', ')']]
+#tokenized_list =[['(', 'CONS', ' ', '4', ' ', '(', 'A', ' ', '.', ' ', 'B', ')', ')']]
 print(tokenized_list)
 print("===================================================================")
 print("Accepted Expressions For Second Pass Checking:")
