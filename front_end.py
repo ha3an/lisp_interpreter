@@ -3,8 +3,8 @@ import re
 from enum import Enum
 import jsonpickle # pip install jsonpickle
 import json
-# TODO GREATER AND LESS IMPLEMENTATION
-# TODO implementation of get_val (recursive) and alist and dlist
+# TODO cond, int,
+
 
 decl_symb = []
 
@@ -238,6 +238,8 @@ def apply(function_name, arg_list, alist, dlist):
             return SExp.cons(car_arg_list, cadr_arg_list)
         if function_name == SExp.get_atom('ATOM'):
             return arg_list.car().is_atom()
+        if function_name == SExp.get_atom('INT'):
+            return arg_list.car().is_int()
         if function_name == SExp.get_atom('NULL'):
             return arg_list.car().is_null()
         if function_name == SExp.get_atom('EQ'):
@@ -277,7 +279,6 @@ def apply(function_name, arg_list, alist, dlist):
             user_def_fun = SExp.get_val(function_name, dlist)
             fun_body = user_def_fun.cdr()
             fun_parameters = user_def_fun.car()
-            # TODO ADD PAIRS
             new_alist = SExp.add_pairs(fun_parameters, arg_list, alist)
             return eval_exp(fun_body, new_alist, dlist)
 

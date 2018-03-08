@@ -1,0 +1,14 @@
+(INT 34) --> (INT . (34 . NIL)) --> T
+
+(INT (QUOTE X))
+$
+(INT (QUOTE (3 . 4)))
+$
+(INT T)
+$
+(INT NIL)
+$
+(QUOTE . (3.4))
+
+$
+(QUOTE 4 5 ()) 3 arguments
